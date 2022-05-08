@@ -35,7 +35,7 @@ if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
-from models.common import DetectMultiBackend
+# from models.common import DetectMultiBackend
 from utils.callbacks import Callbacks
 from utils.datasets import create_dataloader
 from utils.general import (LOGGER, check_dataset, check_img_size, check_requirements, check_yaml,
@@ -44,6 +44,7 @@ from utils.general import (LOGGER, check_dataset, check_img_size, check_requirem
 from utils.metrics import ConfusionMatrix, ap_per_class, box_iou
 from utils.plots import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, time_sync
+from models.experimental import attempt_download, attempt_load
 
 
 def save_one_txt(predn, save_conf, shape, file):
@@ -137,7 +138,12 @@ def run(
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
         # Load model
-        model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+        # model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
+        model = attempt_load(weights if isinstance(weights, list) else w, map_location=device)
+        stride = max(int(model.stride.max()), 32)  # model stride
+        names = model.module.names if hasattr(model, 'module') else model.names  # get class names
+        model.half() if half else model.float()
+        
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
         imgsz = check_img_size(imgsz, s=stride)  # check image size
         half = model.fp16  # FP16 supported on limited backends with CUDA
