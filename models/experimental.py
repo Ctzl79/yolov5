@@ -66,7 +66,7 @@ class MixConv2d(nn.Module):
         self.m = nn.ModuleList([
             nn.Conv2d(c1, int(c_), k, s, k // 2, groups=math.gcd(c1, int(c_)), bias=False) for k, c_ in zip(k, c_)])
         self.bn = nn.BatchNorm2d(c2)
-        self.act = nn.SiLU()
+        self.act = nn.LeakyReLU(0.1)
 
     def forward(self, x):
         return self.act(self.bn(torch.cat([m(x) for m in self.m], 1)))
@@ -100,7 +100,7 @@ def attempt_load(weights, map_location=None, inplace=True, fuse=True):
     # Compatibility updates
     for m in model.modules():
         t = type(m)
-        if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, nn.SiLU, Detect, Model):
+        if t in (nn.Hardswish, nn.LeakyReLU, nn.ReLU, nn.ReLU6, Detect, Model):
             m.inplace = inplace  # torch 1.7.0 compatibility
             if t is Detect:
                 if not isinstance(m.anchor_grid, list):  # new Detect Layer compatibility
